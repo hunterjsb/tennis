@@ -3,7 +3,7 @@ name: "🚀 Deploy Leaderboard to Pages"
 on:
   push:
     branches: [main]
-    paths: ['ranking.csv'] # Trigger only when the ranking file changes
+    paths: ['ranking.csv', '.github/workflows/pages-deploy.yml'] # Trigger when ranking or workflow changes
 
 jobs:
   deploy:
