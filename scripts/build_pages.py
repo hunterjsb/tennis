@@ -127,11 +127,6 @@ def build_site():
     # --- Build Match History Page (history.html) ---
     build_history_page(output_dir=temp_dir)
 
-    # --- Create .nojekyll file to prevent GitHub Pages Jekyll processing ---
-    nojekyll_file = os.path.join(temp_dir, ".nojekyll")
-    with open(nojekyll_file, "w") as f:
-        f.write("")  # Empty file to disable Jekyll
-
     return temp_dir, index_output_file
 
 
