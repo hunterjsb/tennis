@@ -101,3 +101,18 @@ This section defines core terms and documents the current behavior so contributo
 - Ratings are based on individual sets. If a Match contains multiple sets, each set contributes an ELO update independently.
 - Score margin (e.g., 6‑0 vs 6‑5) does not change the ELO delta; only who won the set matters.
 - Player rankings are calculated using the [Elo rating system](https://en.wikipedia.org/wiki/Elo_rating_system).
+
+## Development & Maintenance
+
+### Manual Ranking and Page Rebuild
+
+For development or maintenance, you may need to rebuild the rankings and regenerate the site pages without submitting a new match. This is useful when you've made changes to the Elo calculation logic or the frontend page templates.
+
+To trigger a manual rebuild:
+
+1.  Go to the **Actions** tab of the repository.
+2.  In the left sidebar, click on the **"🛠️ Manual Rebuild"** workflow.
+3.  Above the list of previous runs, you will see a message: "This workflow has a `workflow_dispatch` event trigger." Click the **"Run workflow"** button.
+4.  Leave the branch as `main` and click the green **"Run workflow"** button.
+
+This will execute the workflow, which will re-calculate `ranking.csv` from all existing match files and commit it to `main`. The push will then automatically trigger the "🚀 Deploy Leaderboard to Pages" workflow, which will rebuild and deploy the site.
