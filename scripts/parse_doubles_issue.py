@@ -3,8 +3,10 @@ import re
 import sys
 import yaml
 
+from github_utils import normalize_username
 
-def parse_issue_body(body):
+
+def parse_issue_body(body: str | None, token: str | None = None) -> dict:
     """Parses the issue body to extract doubles match details."""
     if body is None:
         return {}
@@ -20,8 +22,12 @@ def parse_issue_body(body):
         teams_str = teams_match.group(1).strip()
         if "||" in teams_str:
             team1_str, team2_str = teams_str.split("||")
-            team1_players = [p.strip().replace("@", "") for p in team1_str.split(",")]
-            team2_players = [p.strip().replace("@", "") for p in team2_str.split(",")]
+            raw_team1 = [p.strip().replace("@", "") for p in team1_str.split(",")]
+            raw_team2 = [p.strip().replace("@", "") for p in team2_str.split(",")]
+
+            team1_players = [normalize_username(p, token) for p in raw_team1]
+            team2_players = [normalize_username(p, token) for p in raw_team2]
+
             details["team1"] = team1_players
             details["team2"] = team2_players
             # Flatten for individual player access

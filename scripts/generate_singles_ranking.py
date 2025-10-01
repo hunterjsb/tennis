@@ -3,6 +3,8 @@ import sys
 import yaml
 import pandas as pd
 
+from github_utils import normalize_username, get_bearer_token
+
 K = 32
 ratings = {}
 # Stats per player. We'll compute:
@@ -26,13 +28,15 @@ def _ensure_player(player: str) -> None:
         }
 
 
-def apply_match(match):
+def apply_match(match: dict, token: str | None = None) -> None:
     """Update ratings and aggregates from a single match file.
 
     Elo is applied per set. Each set is an independent event that updates
     the players' ratings based solely on who won the set (score margin ignored).
     """
-    player1, player2 = match["players"]
+    p1_raw, p2_raw = match["players"]
+    player1 = normalize_username(p1_raw, token)
+    player2 = normalize_username(p2_raw, token)
 
     # Ensure player entries exist for aggregation
     _ensure_player(player1)
@@ -77,7 +81,8 @@ def apply_match(match):
 
 def main():
     """Main function to calculate and print rankings."""
-    # All players start with default rating of 1200 - no CSV bootstrapping needed
+    # All players start with default rating of 1200
+    token = get_bearer_token()
 
     # Process matches
     for fn in sorted(glob.glob("singles-matches/*.yml")):
@@ -85,7 +90,7 @@ def main():
             try:
                 match_data = yaml.safe_load(f)
                 if match_data and "players" in match_data:
-                    apply_match(match_data)
+                    apply_match(match_data, token)
             except yaml.YAMLError as e:
                 print(f"Error reading {fn}: {e}", file=sys.stderr)
 

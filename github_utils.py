@@ -193,7 +193,7 @@ def check_collaborator(owner: str, repo: str, username: str, token: str | None =
         return True
     if resp.status_code == 404:
         return False
-    print(f"Warn: collaborator check for {username} -> {resp.status_code} {resp.text}")
+    print(f"Warn: collaborator check for {username} -> {resp.status_code} {resp.text}", file=sys.stderr)
     return False
 
 
@@ -216,7 +216,7 @@ def comment_once(
     url = f"{GITHUB_API}/repos/{owner}/{repo}/issues/{issue_number}/comments"
     resp = gh_post(url, {"body": body_text}, token)
     if resp.status_code not in (200, 201):
-        print(f"Warn: failed to post comment: {resp.status_code} {resp.text}")
+        print(f"Warn: failed to post comment: {resp.status_code} {resp.text}", file=sys.stderr)
 
 
 def request_reviewers(
@@ -232,4 +232,47 @@ def request_reviewers(
     url = f"{GITHUB_API}/repos/{owner}/{repo}/pulls/{pr_number}/requested_reviewers"
     resp = gh_post(url, {"reviewers": reviewers_list}, token)
     if resp.status_code not in (200, 201):
-        print(f"Warn: failed to request reviewers: {resp.status_code} {resp.text}")
+        print(f"Warn: failed to request reviewers: {resp.status_code} {resp.text}", file=sys.stderr)
+
+
+def get_user(username: str, token: str | None = None) -> dict | None:
+    """Fetch a user by username; returns None if not found."""
+    url = f"{GITHUB_API}/users/{username}"
+    resp = gh_get(url, token)
+    if resp.status_code == 200:
+        return resp.json()
+    if resp.status_code == 404:
+        return None
+    print(f"Warn: user fetch for {username} -> {resp.status_code} {resp.text}", file=sys.stderr)
+    return None
+
+
+# In-memory cache for resolved usernames
+_username_cache: dict[str, str] = {}
+
+
+def normalize_username(username: str, token: str | None = None) -> str:
+    """Return a canonical username from a GitHub profile if it exists.
+
+    - Case-insensitive `username` is used to find a GitHub profile
+    - If found, the canonical `login` from the profile is returned
+    - If not found, the original username is lowercased
+    - Results are cached in-memory for the process lifetime
+    """
+    if not username:
+        return ""
+
+    lowered_username = username.lower()
+    if lowered_username in _username_cache:
+        return _username_cache[lowered_username]
+
+    user_data = get_user(username, token)
+    if user_data and "login" in user_data:
+        canonical_name = user_data["login"]
+        _username_cache[lowered_username] = canonical_name
+        return canonical_name
+
+    # Fallback for non-GH users
+    normalized = username.lower()
+    _username_cache[lowered_username] = normalized
+    return normalized

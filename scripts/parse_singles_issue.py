@@ -3,8 +3,10 @@ import re
 import sys
 import yaml
 
+from github_utils import normalize_username
 
-def parse_issue_body(body):
+
+def parse_issue_body(body: str | None, token: str | None = None) -> dict:
     """Parses the issue body to extract match details."""
     if body is None:
         return {}
@@ -18,7 +20,8 @@ def parse_issue_body(body):
     players_match = re.search(r"### Players.*?\n\s*([^\n]+)", body)
     if players_match:
         players_str = players_match.group(1).strip()
-        details["players"] = [p.strip().replace("@", "") for p in players_str.split(",")]
+        raw_players = [p.strip().replace("@", "") for p in players_str.split(",")]
+        details["players"] = [normalize_username(p, token) for p in raw_players]
 
     sets_match = re.search(r"### Sets.*?\n(.*?)(?=\n###|\Z)", body, re.DOTALL)
     if sets_match:

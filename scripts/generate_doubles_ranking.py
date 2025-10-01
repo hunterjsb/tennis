@@ -3,6 +3,8 @@ import sys
 import yaml
 import pandas as pd
 
+from github_utils import normalize_username, get_bearer_token
+
 K = 32
 
 # --- Team-based data ---
@@ -47,10 +49,12 @@ def _ensure_player_stats(player: str) -> None:
         }
 
 
-def apply_match(match):
+def apply_match(match: dict, token: str | None = None) -> None:
     """Update ratings and aggregates from a single doubles match file."""
-    team1_players = match["team1"]
-    team2_players = match["team2"]
+    team1_players_raw = match["team1"]
+    team2_players_raw = match["team2"]
+    team1_players = [normalize_username(p, token) for p in team1_players_raw]
+    team2_players = [normalize_username(p, token) for p in team2_players_raw]
 
     # Normalize team names for team-based stats
     team1_key = normalize_team(team1_players)
@@ -148,13 +152,15 @@ def apply_match(match):
 
 def main():
     """Main function to calculate and print doubles rankings."""
+    token = get_bearer_token()
+
     # Process doubles matches
     for fn in sorted(glob.glob("doubles-matches/*.yml")):
         with open(fn) as f:
             try:
                 match_data = yaml.safe_load(f)
                 if match_data and "team1" in match_data and "team2" in match_data:
-                    apply_match(match_data)
+                    apply_match(match_data, token)
             except yaml.YAMLError as e:
                 print(f"Error reading {fn}: {e}", file=sys.stderr)
 
