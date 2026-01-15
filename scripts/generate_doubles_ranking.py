@@ -106,8 +106,19 @@ def apply_match(match):
         individual_ratings[set_loser_players[1]] = new_r_l2
 
 
+import os
+import argparse
+
 def main():
     """Main function to calculate and print doubles rankings."""
+    # --- Argument parsing ---
+    parser = argparse.ArgumentParser(description="Generate doubles rankings from match data.")
+    parser.add_argument("output_dir", help="Directory to save the ranking CSV files.")
+    args = parser.parse_args()
+
+    # Create output directory if it doesn't exist
+    os.makedirs(args.output_dir, exist_ok=True)
+
     # Process doubles matches
     for fn in sorted(glob.glob("doubles-matches/*.yml")):
         with open(fn) as f:
@@ -121,37 +132,61 @@ def main():
     # --- Generate and save team rankings ---
     team_data = []
     for team, rating in sorted(team_ratings.items(), key=lambda item: -item[1]):
-        stats = team_stats.get(team, {"set_wins": 0, "set_losses": 0, "game_wins": 0, "game_losses": 0})
-        team_data.append({
-            "team": team, "rating": round(rating, 1),
-            "set_wins": stats["set_wins"], "set_losses": stats["set_losses"],
-            "game_wins": stats["game_wins"], "game_losses": stats["game_losses"]
-        })
+        stats = team_stats.get(
+            team,
+            {"set_wins": 0, "set_losses": 0, "game_wins": 0, "game_losses": 0},
+        )
+        team_data.append(
+            {
+                "team": team,
+                "rating": round(rating, 1),
+                "set_wins": stats["set_wins"],
+                "set_losses": stats["set_losses"],
+                "game_wins": stats["game_wins"],
+                "game_losses": stats["game_losses"],
+            }
+        )
 
     team_df = pd.DataFrame(team_data)
+    team_output_path = os.path.join(args.output_dir, "doubles-ranking.csv")
     if not team_df.empty:
         team_df = team_df.sort_values(by="rating", ascending=False).reset_index(drop=True)
-        team_df.to_csv("doubles-ranking.csv", index=False)
+        team_df.to_csv(team_output_path, index=False)
     else:
         # Create empty file if no data
-        pd.DataFrame(columns=["team", "rating", "set_wins", "set_losses", "game_wins", "game_losses"]).to_csv("doubles-ranking.csv", index=False)
+        pd.DataFrame(
+            columns=["team", "rating", "set_wins", "set_losses", "game_wins", "game_losses"]
+        ).to_csv(team_output_path, index=False)
 
     # --- Generate and save individual rankings ---
     individual_data = []
     for player, rating in sorted(individual_ratings.items(), key=lambda item: -item[1]):
-        stats = individual_stats.get(player, {"set_wins": 0, "set_losses": 0, "game_wins": 0, "game_losses": 0})
-        individual_data.append({
-            "player": player, "rating": round(rating, 1),
-            "set_wins": stats["set_wins"], "set_losses": stats["set_losses"],
-            "game_wins": stats["game_wins"], "game_losses": stats["game_losses"]
-        })
+        stats = individual_stats.get(
+            player,
+            {"set_wins": 0, "set_losses": 0, "game_wins": 0, "game_losses": 0},
+        )
+        individual_data.append(
+            {
+                "player": player,
+                "rating": round(rating, 1),
+                "set_wins": stats["set_wins"],
+                "set_losses": stats["set_losses"],
+                "game_wins": stats["game_wins"],
+                "game_losses": stats["game_losses"],
+            }
+        )
 
     individual_df = pd.DataFrame(individual_data)
+    individual_output_path = os.path.join(args.output_dir, "doubles-individual-ranking.csv")
     if not individual_df.empty:
-        individual_df = individual_df.sort_values(by="rating", ascending=False).reset_index(drop=True)
-        individual_df.to_csv("doubles-individual-ranking.csv", index=False)
+        individual_df = individual_df.sort_values(by="rating", ascending=False).reset_index(
+            drop=True
+        )
+        individual_df.to_csv(individual_output_path, index=False)
     else:
-        pd.DataFrame(columns=["player", "rating", "set_wins", "set_losses", "game_wins", "game_losses"]).to_csv("doubles-individual-ranking.csv", index=False)
+        pd.DataFrame(
+            columns=["player", "rating", "set_wins", "set_losses", "game_wins", "game_losses"]
+        ).to_csv(individual_output_path, index=False)
 
 
 if __name__ == "__main__":
